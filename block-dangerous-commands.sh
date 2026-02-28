@@ -3,12 +3,10 @@
 # Claude Code Security Hook — Bash Command Validator
 # Blocks dangerous commands when running with --dangerously-skip-permissions
 #
-# Install: ~/.claude/hooks/block-dangerous-commands.sh
+# Location: ~/.claude/hooks/block-dangerous-commands.sh
 # Receives JSON on stdin: {"tool_name":"Bash","tool_input":{"command":"..."}}
 # To block: output JSON with permissionDecision "deny"
 # To allow: exit 0 with no output
-#
-# Requires: jq
 # ============================================================================
 
 set -uo pipefail
@@ -50,7 +48,8 @@ chk '\bwipefs\b'                          "BLOCKED: wipefs (wipe filesystem sign
 chk '>\s*/dev/sd'                         "BLOCKED: redirect to block device"
 
 # ======================== SYSTEM ADMINISTRATION =============================
-# NOTE: sudo is NOT blocked by default — many servers need it for Docker, etc.
+# NOTE: sudo is NOT blocked — this server needs it for all Docker operations.
+# The destructive commands below are caught regardless of sudo prefix.
 # Uncomment to block ALL sudo usage:
 # chk '\bsudo\b'                          "BLOCKED: sudo (all elevated commands)"
 chk '(^|[;&|]\s*)(sudo\s+)?reboot\b'     "BLOCKED: reboot"
@@ -81,7 +80,8 @@ chk '\bmv\b.*\.ssh/'                      "BLOCKED: mv to .ssh directory"
 # ======================== GIT ===============================================
 chk '\bgit\s+push\s+.*--force'            "BLOCKED: git push --force"
 chk '\bgit\s+push\s+(-f\b|.*\s-f\b)'     "BLOCKED: git push -f (force push)"
-chk '\bgit\s+push\b.*\s(main|master)\b'  "BLOCKED: git push to main/master"
+# git push to main is allowed — force push (lines above) is still blocked
+# chk '\bgit\s+push\b.*\s(main|master)\b'  "BLOCKED: git push to main/master"
 chk '\bgit\s+reset\s+--hard'              "BLOCKED: git reset --hard (discard all changes)"
 chk '\bgit\s+clean\s+-[a-z]*f'           "BLOCKED: git clean -f (force remove untracked files)"
 
